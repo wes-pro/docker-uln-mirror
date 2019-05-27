@@ -30,6 +30,10 @@ function register {
     fi
   done
   if [[ -f ${YUMDIR}/conf/repo_list ]]; then
+    for channel in $(uln-channel -l | fgrep -vf /yum/conf/repo_list); do
+      rem_channel_args="$rem_channel_args -c $channel"
+    done
+    uln-channel -r -u $"${uln_user}" -p "${uln_password}" $rem_channel_args
     while read channel; do
       add_channel_args="$add_channel_args -c $channel"
     done <${YUMDIR}/conf/repo_list
@@ -49,7 +53,7 @@ function download {
     while read channel; do
       sync_channel_args="$sync_channel_args -r $channel"
     done <${YUMDIR}/conf/repo_list
-    reposync -c ${YUMDIR}/conf/yum.conf -g -l -m --download-metadata -p ${YUMDIR}/repos $sync_channel_args
+    reposync -c ${YUMDIR}/conf/yum.conf -l -m --download-metadata -p ${YUMDIR}/repos $sync_channel_args
   fi
 }
 

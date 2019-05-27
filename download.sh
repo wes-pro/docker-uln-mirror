@@ -15,8 +15,9 @@ if [ $? -eq 0 ]; then
   chcon -Rt svirt_sandbox_file_t ${YUM_DIRECTORY}
 fi
 
-docker run -d --rm  \
+docker run -d \
   -h "uln-mirror" \
+  --name "uln-mirror" \
   -e YUM_DIRECTORY="${YUM_DIRECTORY}" \
   -v "${YUM_DIRECTORY}":"${YUM_DIRECTORY}" \
-  uln-mirror:latest 
+  uln-mirror:latest
