@@ -10,8 +10,10 @@ fi
 
 export VOLNAME="$1"
 
-docker run -d \
+docker run -d --rm \
   -h "uln-mirror" \
-  --name "uln-mirror" \
-  -v ${VOLNAME}:/uln \
-  uln-mirror:latest 
+  --name "uln-mirror-nginx" \
+  -p 8080:80 \
+  -v `pwd`/nginx.conf:/etc/nginx/nginx.conf:ro \
+  -v ${VOLNAME}:/usr/share/nginx/html:ro \
+  -d nginx

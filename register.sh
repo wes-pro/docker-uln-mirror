@@ -4,70 +4,54 @@
 #
 
 if [ $# -ne 1 ]; then
-  echo Provide directory path where YUM repositories will be kept
+  cat <<EOF
+  The only input parameter is the name of docker volume where repositories will be kept.
+  If volume already exists it will NOT be overwritten. 
+
+  You should also amend repo_list file and put channels you need to download from ULN
+  Re-running this script with existing volume - is the way to modify list of downloaded repositories.
+EOF
   exit 1
 fi
 
-export YUM_DIRECTORY="$1"
+export VOLNAME="$1"
 
-mkdir -p /${YUM_DIRECTORY}/conf
-mkdir -p /${YUM_DIRECTORY}/repos
-mkdir -p /${YUM_DIRECTORY}/persist
-mkdir -p /${YUM_DIRECTORY}/cache
-
-cat >/${YUM_DIRECTORY}/conf/yum.conf <<EOF
-[main]
-logfile=/var/log/yum.log
-gpgcheck=1
-plugins=1
-pluginconfpath=${YUM_DIRECTORY}/conf
-persistdir=${YUM_DIRECTORY}/persist
-cachedir=${YUM_DIRECTORY}/cache
-EOF
-
-cat >${YUM_DIRECTORY}/conf/rhnplugin.conf <<EOF
-[main]
-enabled=1
-gpgcheck=1
-EOF
-
-cat >${YUM_DIRECTORY}/conf/ulninfo.conf <<EOF
-[main]
-enabled=1
-gpgcheck=1
-EOF
-
-cat >${YUM_DIRECTORY}/conf/ovl.conf <<EOF
-[main]
-enabled=1
-EOF
-
-docker build -t uln-mirror:latest .
-
-selinuxenabled
-if [ $? -eq 0 ]; then
-  chcon -Rt svirt_sandbox_file_t ${YUM_DIRECTORY}
+# Pull oracleliunux image from repositories
+docker inspect oraclelinux >/dev/null 2>&1
+if [[ $? -ne 0 ]]; then
+	docker pull oraclelinux:latest || { echo 'Could not find or download oraclelinux docker image'; exit 1; }
 fi
 
-docker run -it --rm  \
+# Create docker volume to keep persistent data
+docker volume create ${VOLNAME}
+
+# Create docker image to handle repo synchronization
+docker build -t uln-mirror:latest .
+
+# Run container to register or setup your ULN mirror 
+
+docker run -it --rm \
   -h "uln-mirror" \
-  -e YUM_DIRECTORY="${YUM_DIRECTORY}" \
-  -v ${YUM_DIRECTORY}:/${YUM_DIRECTORY} \
+  -v ${VOLNAME}:/uln \
   uln-mirror:latest register
 
 if [ $? -eq 0 ]; then
+	cat <<-EOF
 
-cat <<EOF
+  Docker image "uln-mirror" and volume "$VOLNAME" created. 
 
-Docker image "uln-mirror" created. 
+  If you haven't done so yet, put channel names you want to download into 
+  repo_list file and rerun register.sh script with the same volume name. 
+  You can find list of all available repositories in repo_available file.
+  Re-running register.sh script with existing volume - still asks for username
+  and password - these are required by uln-channel to modify channel list.
 
-If you haven't done so yet, put repo names you want to download into 
-${YUM_DIRECTORY}/conf/repo_list file and rerun register.sh script.
-You can find list of all available repositories in this file: ${YUM_DIRECTORY}/conf/repo_available
+  Then run below command to start docker and which will download selected repositories: 
+  ./download.sh <volume-name>
 
-Then run below command to start docker and which will download selected repositories: 
-./download.sh ${YUM_DIRECTORY}
+  To publish downloaded repositories using HTTP server start another docker using:
+  ./publish.sh <volume-name>
 
-EOF
+	EOF
 
 fi
