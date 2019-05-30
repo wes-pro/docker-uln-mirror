@@ -5,7 +5,7 @@ Officially you need Oracle Linux to create your [local ULN YUM mirror](https://w
 This is sometimes not possible or unconvenient, for example if you are Oracle Exadata customer, so you have Oracle Linux only on Exadata and your other linux systems are Redhat, SuSE or Debian.
 
 Luckily Oracle created [official docker image for Oracle Linux 7](https://hub.docker.com/_/oraclelinux/) which can be used on any non-Oracle Linux which have docker installed.
-I'm using this image to setup local mirror for ULN repositories available on https://linux.oracle.com (ULN).
+I'm using this image to setup local mirror for ULN repositories available on https://linux.oracle.com.
 
 ### Requirements
 1. Linux system with docker service installed and running. 
@@ -43,7 +43,12 @@ Third script is using nginx docker image to create container which will mount (a
 ```
 ./publish <volume_name>
 ```
-You can execute this script even while donwload is still in progress and check using browser what has been downloaded so far. But repositories will not be usable until download finishes entirely.
+You can execute this script even while download is still in progress and check using browser what has been downloaded so far. But repositories will not be usable until download finishes entirely.
+
+There is no script to stop NGINX container. Just use docker commands:
+```
+docker stop <containerid>
+```
 
 #### Remarks:
 You should be able to interrupt (stop) the container and re-run download.sh or register.sh scripts as many times as you like - as long as you use the same docker volume which holds registration data. Re-runninig register.sh script is only necessery if you change list of mirrored repositories (repo_list file) or if you decide to start from scratch.
