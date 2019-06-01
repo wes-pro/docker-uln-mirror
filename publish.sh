@@ -16,4 +16,4 @@ docker run -d --rm \
   -p 8080:80 \
   -v `pwd`/nginx.conf:/etc/nginx/nginx.conf:ro \
   -v ${VOLNAME}:/usr/share/nginx/html:ro \
-  -d nginx
+  nginx
